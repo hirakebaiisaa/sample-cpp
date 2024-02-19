@@ -2,39 +2,62 @@
 #include <iostream>
 #include <string>
 
-class MyClass
-{
-public:
-    MyClass(int i, std::string n) : id(i), name(n) {}
-    int id;
-    std::string name;
-};
-
-void swap(MyClass& a, MyClass& b)
-{
-    auto temp = std::move(a);
-    a = std::move(b);
-    b = std::move(temp);
-}
-
 void foo(int&) { std::cout << "foo&" << std::endl; }
 void foo(int&&) { std::cout << "foo&&" << std::endl; }
 void boo(int&& i) { foo(i); }
 
-int main(void) {
-    std::cout << "hello, world" << std::endl;
-
-    std::printf("%d\n", 1100);
-    std::printf("%d\n", 2200);
-
-    auto name = "class1";
-    auto cls = new MyClass(1, name);
-
+void testMoveSemantics()
+{
     int&& i = 3;
     foo(i);
     foo(3);
     //boo(i); //コンパイルエラー：左辺値参照を受け取る引数がないため
     boo(std::move(i));
+}
+
+class ParentObj
+{
+    private:
+    //ParentObj(int i, std::string n) = delete;
+        std::unique_ptr<ParentObj> ptr = nullptr;
+
+    public:
+
+        void setImmobilized(std::unique_ptr<ParentObj>&& ptr)
+        {
+            this->ptr = std::move(ptr);
+        }
+
+        ~ParentObj()
+         {
+            std::cout << "ParentObj destructor" << std::endl;
+        }
+};
+
+std::unique_ptr<ParentObj> fooP()
+{
+    return std::make_unique<ParentObj>();
+}
+
+void testAllocation()
+{
+    //auto obj = std::make_unique<ParentObj>(1, "name") >();
+    //delete obj;
+
+    auto fp = fooP();
+    {
+        ParentObj p;
+        p.setImmobilized(std::move(fp));
+    }
+}
+
+
+int main(void) {
+    std::cout << "hello, world" << std::endl;
+    auto name = "class1";
+
+    //testMoveSemantics();
+    testAllocation();
 
     return 0;
 }
